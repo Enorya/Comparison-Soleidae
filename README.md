@@ -5,7 +5,7 @@ This work is part of the following paper (in revision): Geslain et al., Comparis
 
 The scripts are divided as follows:
 
-1. `minimap2.sh` contains the commands used to map the long Pacbio HiFi reads to the genome of *Solea senegalensis*
-2. `dygsu.sh`, `NGSEP.sh` and `sniffles2.sh` contains the commands used to call the SVs
-3. `SV_filtering.sh` contains the commands used filter and merge the detected SVs
-4. `orthogonal_validation.sh` contains the commands used to validate by mapping the genome of *S. senegalensis* to the reference genome of *S. solea* and calling SVs between them
+1. [Minimap2](Scripts/minimap2.sh) contains the commands used to map the long Pacbio HiFi reads to the genome of *Solea senegalensis*
+2. [Dygsu](Scripts/dygsu.sh), [NGSEP](Scripts/NGSEP.sh) and [Sniffles2](Scripts/sniffles2.sh) contains the commands used to call the SVs
+3. [SV_filetering](Scripts/SV_filtering.sh) contains the commands used filter and merge the detected SVs
+4. [Orthogonal_validation](Scripts/orthogonal_validation.sh) contains the commands used to validate by mapping the genome of *S. senegalensis* to the reference genome of *S. solea* and calling SVs between them
