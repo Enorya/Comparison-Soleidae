@@ -9,6 +9,7 @@ This work is part of the following paper (in revision): Geslain et al., Comparis
     2. [Dygsu](Scripts/dygsu.sh), [NGSEP](Scripts/NGSEP.sh) and [Sniffles2](Scripts/sniffles2.sh) contains the commands used to call the SVs
     3. [SV_filtering](Scripts/SV_filtering.sh) contains the commands used to filter and merge the detected SVs
     4. [Orthogonal_validation](Scripts/orthogonal_validation.sh) contains the commands used to validate by mapping the genome of *S. senegalensis* to the reference genome of *S. solea* and calling SVs between them
+    5. [Validated_SV_retrieval](Scripts/validated_SV_gathering.sh) contains the commands used to retrieve only the validated SVs via assembly-to-assembly validation
 
 - The folder `SV_callings` contains the basic SV calling for the following 3 tools: Dygsu, NGSEP and Sniffles2.
 
