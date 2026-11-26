@@ -2,12 +2,12 @@
 conda activate sv-detection
 
 # Move to working directory
-cd /path/to/working/directory/solea_solea_analysis/sv-detection/;
+cd /solea_solea_analysis/sv-detection/;
 
 # Assign variables
 REF=../chrom_solea_senegalensis.fasta
 QUERY_ASM=../chrom_solea_solea.fasta
-READ_SV_VCF=./comparison-SURVIVOR-solsen/comparison_1kbp_min2_50bp_strand-type1.vcf
+READ_SV_VCF=./comparison-SURVIVOR/merged_filtered_SV.vcf
 
 # 1. Align S. senegalensis to S. solea reference
 minimap2 -a -x asm20 --cs --secondary=no -r2k -t 32 $REF $QUERY_ASM | samtools sort -@ 32 -m 4G -o solsen_vs_solsol.sorted.bam
