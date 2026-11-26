@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Load conda environment
 conda activate sv-detection
 

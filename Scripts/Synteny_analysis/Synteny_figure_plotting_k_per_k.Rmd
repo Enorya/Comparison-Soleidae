@@ -1,0 +1,251 @@
+---
+title: "plot_synteny_flatfishes"
+author: "Enora Geslain"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load needed packages
+
+```{r load_packages}
+gc()
+library(gggenomes)
+library(argparse)
+library(gtools)
+library(scales)
+library(dplyr)
+library(ggeasy)
+library(gridExtra)
+```
+
+## Set scale bar
+
+```{r scale_bar, echo=FALSE}
+scale_bar <- tibble(x = c(0), xend = c(50000000),
+                    y = c(0), yend = c(0))
+
+# Infer best units for scale bar
+label <- paste(50000000, "bp", sep = " ")
+if (50000000 %% 1e9 == 0) {
+  label <- paste(50000000 / 1e9, "Gbp", sep = " ")
+} else if (50000000 %% 1e6 == 0) {
+  label <- paste(50000000 / 1e6, "Mbp", sep = " ")
+} else if (50000000 %% 1e3 == 0) {
+  label <- paste(50000000 / 1e3, "kbp", sep = " ")
+}
+```
+
+# Chromosome 1
+
+## Read the sequences
+
+```{r load_synteny, echo=FALSE}
+sequences <- read.csv("ntsynt_flatfish_chrom.sequence_lengths.tsv", sep = "\t", header = TRUE)
+```
+
+## Prepare and rearrange the chromosome sequences
+
+```{r prepare_rearrange, echo=FALSE}
+## Set genome order
+input_order <- unique(sequences$bin_id)
+
+sequences <- sequences[sequences$seq_id == 'NC_081134.1' | sequences$seq_id == 'NC_058021.1' | sequences$seq_id == 'OY735178.1' | sequences$seq_id == 'OY735188.1', ]
+
+## Set chromosome order
+input_chrom_order <- c("OY735178.1", "OY735188.1", "NC_058021.1", "NC_081134.1")
+mixedrank <- function(x) order(gtools::mixedorder(x))
+
+## Rearrange line order to match wanted genome and chromosome orders
+sequences <- sequences %>%
+  arrange(factor(bin_id, levels=input_order),
+          factor(seq_id, levels=input_chrom_order))
+
+## Change bin_id names
+sequences$bin_id[sequences$bin_id == "solSol_chrom.fa"] <- "Solea solea"
+sequences$bin_id[sequences$bin_id == "solSen_chrom.fa"] <- "Solea senegalensis"
+sequences$bin_id[sequences$bin_id == "micVar_chrom.fa"] <- "Microchirus variegatus"
+```
+
+## Read and prepare synteny links
+
+```{r prepare_links, echo=FALSE}
+links_ntsynt <- read.csv("ntsynt_flatfish_chrom.links.tsv",
+                         sep = "\t", header = TRUE)
+links_ntsynt$seq_id <- factor(links_ntsynt$seq_id,
+                              levels = mixedsort(unique(links_ntsynt$seq_id)))
+links_ntsynt <- links_ntsynt[mixedorder(links_ntsynt$seq_id), ]
+links_ntsynt$seq_id2 <- as.character(links_ntsynt$seq_id2)
+links_ntsynt$colour_block <- as.factor(links_ntsynt$colour_block)
+links_ntsynt <- links_ntsynt[links_ntsynt$seq_id == 'NC_081134.1' & links_ntsynt$seq_id2 == 'NC_058021.1' | links_ntsynt$seq_id == 'NC_058021.1' & links_ntsynt$seq_id2 == 'OY735188.1' | links_ntsynt$seq_id == 'NC_058021.1' & links_ntsynt$seq_id2 == 'OY735178.1', ]
+links_ntsynt$bin_id[links_ntsynt$bin_id == "solSol_chrom.fa"] <- "Solea solea"
+links_ntsynt$bin_id2[links_ntsynt$bin_id2 == "solSen_chrom.fa"] <- "Solea senegalensis"
+links_ntsynt$bin_id[links_ntsynt$bin_id == "solSen_chrom.fa"] <- "Solea senegalensis"
+links_ntsynt$bin_id2[links_ntsynt$bin_id2 == "micVar_chrom.fa"] <- "Microchirus variegatus"
+```
+
+## Adapt chromosome names
+
+```{r adapt_chr_names, echo=FALSE}
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058021.1", "chrom01", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058021.1", "chrom01", colour_block))
+```
+
+## Make the ribbon plot
+
+```{r plot, echo=FALSE}
+p <-  gggenomes(seqs = sequences, links = links_ntsynt)
+plot1 <- p + theme_gggenomes_clean(base_size = 15) +
+  geom_link(aes(fill = "#7ebacc", color = "#7ebacc"),
+            offset = 0,
+            alpha = 0.5,
+            size = 0.05) +
+  geom_seq(size = 1.5,
+           colour = "gray31") +
+  geom_seq_label(aes(label = c("5", "15", "LG1", "1")),
+                 vjust = c(-2, -2, 0.5, 0.5),
+                 hjust = c(-20, -7, -6, -22.5),
+                 size = 10,
+                 fontface = "bold",
+                 show.legend = FALSE) +
+  geom_bin_label(aes(label = bin_id),
+                 size = 10,
+                 hjust = 0.9,
+                 fontface = "bold.italic") +
+  theme(axis.text.x = element_text(size = 25),
+        legend.position = "bottom",
+        legend.text = element_text(size=8),
+        legend.key.size = unit(1,"line"),
+        legend.title = element_text(size=12),
+        plot.title = element_text(size = 30, face = "bold", hjust = 0.5),
+        panel.background = element_rect(fill='transparent'),
+        plot.background = element_rect(fill='transparent', color=NA)) +
+  scale_fill_manual(values = "#7ebacc",
+                    guide = "none") +
+  scale_colour_manual(values = "#7ebacc",
+                      guide = "none") +
+  ggtitle("Synteny plot of chromosome LG1") +
+  easy_remove_x_axis(what = c("ticks", "title", "text", "line"), teach = FALSE)
+
+## reverse some chromosomes to make the plot nicer
+plot1 <- plot1 %>% flip_seqs(2)
+plot1
+
+# Save as high resolution figure
+ggsave(paste("synteny_plot_flatfish_K1", ".png", sep = ""),
+       plot1,
+       units = "cm",
+       widt = 50,
+       height = 20,
+       bg = "transparent",
+       dpi = 300)
+```
+
+# Chromosome 2
+
+## Read the sequences
+
+```{r load_synteny, echo=FALSE}
+sequences <- read.csv("ntsynt_flatfish_chrom.sequence_lengths.tsv", sep = "\t", header = TRUE)
+```
+
+## Prepare and rearrange the chromosome sequences
+
+```{r prepare_rearrange, echo=FALSE}
+## Set genome order
+input_order <- unique(sequences$bin_id)
+
+sequences <- sequences[sequences$seq_id == 'NC_081135.1' | sequences$seq_id == 'NC_058022.1'  | sequences$seq_id == 'OY735178.1' | sequences$seq_id == 'OY735195.1' | sequences$seq_id == 'OY735174.1', ]
+
+## Set chromosome order
+input_chrom_order <- c("OY735195.1", "OY735178.1", "OY735174.1", "NC_058022.1", "NC_081135.1")
+mixedrank <- function(x) order(gtools::mixedorder(x))
+
+## Rearrange line order to match wanted genome and chromosome orders
+sequences <- sequences %>%
+  arrange(factor(bin_id, levels=input_order),
+          factor(seq_id, levels=input_chrom_order))
+
+## Change bin_id names
+sequences$bin_id[sequences$bin_id == "solSol_chrom.fa"] <- "Solea solea"
+sequences$bin_id[sequences$bin_id == "solSen_chrom.fa"] <- "Solea senegalensis"
+sequences$bin_id[sequences$bin_id == "micVar_chrom.fa"] <- "Microchirus variegatus"
+```
+
+## Read and prepare synteny links
+
+```{r prepare_links, echo=FALSE}
+links_ntsynt <- read.csv("ntsynt_flatfish_chrom.links.tsv",
+                         sep = "\t", header = TRUE)
+links_ntsynt$seq_id <- factor(links_ntsynt$seq_id,
+                              levels = mixedsort(unique(links_ntsynt$seq_id)))
+links_ntsynt <- links_ntsynt[mixedorder(links_ntsynt$seq_id), ]
+links_ntsynt$seq_id2 <- as.character(links_ntsynt$seq_id2)
+links_ntsynt$colour_block <- as.factor(links_ntsynt$colour_block)
+links_ntsynt <- links_ntsynt[links_ntsynt$seq_id == 'NC_081135.1' & links_ntsynt$seq_id2 == 'NC_058022.1' | links_ntsynt$seq_id == 'NC_058022.1' & links_ntsynt$seq_id2 == 'OY735178.1' | links_ntsynt$seq_id == 'NC_058022.1' & links_ntsynt$seq_id2 == 'OY735195.1' | links_ntsynt$seq_id == 'NC_058022.1' & links_ntsynt$seq_id2 == 'OY735174.1', ]
+links_ntsynt$bin_id[links_ntsynt$bin_id == "solSol_chrom.fa"] <- "Solea solea"
+links_ntsynt$bin_id2[links_ntsynt$bin_id2 == "solSen_chrom.fa"] <- "Solea senegalensis"
+links_ntsynt$bin_id[links_ntsynt$bin_id == "solSen_chrom.fa"] <- "Solea senegalensis"
+links_ntsynt$bin_id2[links_ntsynt$bin_id2 == "micVar_chrom.fa"] <- "Microchirus variegatus"
+```
+
+## Adapt chromosome names
+
+```{r adapt_chr_names, echo=FALSE}
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058022.1", "chrom02", colour_block))
+```
+
+## Make the ribbon plot
+
+```{r plot, echo=FALSE}
+p <-  gggenomes(seqs = sequences, links = links_ntsynt)
+plot2 <- p + theme_gggenomes_clean(base_size = 15) +
+  geom_link(aes(fill = "#d84f31", color = "#d84f31"),
+            offset = 0,
+            alpha = 0.5,
+            size = 0.05) +
+  geom_seq(size = 1.5,
+           colour = "gray31") +
+  geom_seq_label(aes(label = c("22", "5", "1", "LG2", "2")),
+                 vjust = c(-2, -2, -2, 0.5, 0.5),
+                 hjust = c(-2.5, -10, -14, -2.5, -11),
+                 size = 10,
+                 fontface = "bold",
+                 show.legend = FALSE) +
+  geom_bin_label(aes(label = bin_id),
+                 size = 10,
+                 hjust = 0.9,
+                 fontface = "bold.italic") +
+  theme(axis.text.x = element_text(size = 25),
+        legend.position = "bottom",
+        legend.text = element_text(size=8),
+        legend.key.size = unit(1,"line"),
+        legend.title = element_text(size=12),
+        plot.title = element_text(size = 30, face = "bold", hjust = 0.5),
+        panel.background = element_rect(fill='transparent'),
+        plot.background = element_rect(fill='transparent', color=NA)) +
+  scale_fill_manual(values = "#d84f31",
+                    guide = "none") +
+  scale_colour_manual(values = "#d84f31",
+                      guide = "none") +
+  ggtitle("Synteny plot of chromosome LG2") +
+  easy_remove_x_axis(what = c("ticks", "title", "text", "line"), teach = FALSE)
+
+## reverse some chromosomes to make the plot nicer
+plot2 <- plot2 %>% flip_seqs(1,2,5)
+plot2
+
+# Save as high resolution figure
+ggsave(paste("synteny_plot_flatfish_K2", ".png", sep = ""),
+       plot2,
+       units = "cm",
+       widt = 50,
+       height = 20,
+       bg = "transparent",
+       dpi = 300)
+```
+
+# And so on for every chromosome

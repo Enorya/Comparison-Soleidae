@@ -1,0 +1,234 @@
+---
+title: "plot_synteny_flatfishes"
+author: "Enora Geslain"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load needed packages
+
+```{r load_packages}
+gc()
+library(gggenomes)
+library(argparse)
+library(gtools)
+library(scales)
+library(dplyr)
+library(ggeasy)
+```
+
+# Load synteny file
+
+```{r load_synteny, echo=FALSE}
+sequences <- read.csv("ntsynt_flatfish_chrom.sequence_lengths.tsv", sep = "\t", header = TRUE)
+```
+
+## Rearrange the genome and chromosome orders
+
+```{r rearrange, echo=FALSE}
+## Set genome order
+input_order <- unique(sequences$bin_id)
+
+## Set chromosome order
+input_chrom_order <- c("OY735178.1", "OY735188.1", "OY735195.1", "OY735175.1",
+                       "OY735193.1", "OY735180.1", "OY735191.1", "OY735192.1",
+                       "OY735196.1", "OY735187.1", "OY735176.1", "OY735174.1",
+                       "OY735181.1", "OY735182.1", "OY735179.1", "OY735177.1",
+                       "OY735184.1", "OY735194.1", "OY735185.1", "OY735183.1",
+                       "OY735186.1", "OY735189.1", "OY735190.1",
+                       "NC_058021.1", "NC_058022.1", "NC_058023.1",
+                       "NC_058024.1", "NC_058025.1", "NC_058026.1",
+                       "NC_058027.1", "NC_058028.1", "NC_058029.1",
+                       "NC_058030.1", "NC_058031.1", "NC_058032.1",
+                       "NC_058033.1", "NC_058034.1", "NC_058035.1",
+                       "NC_058036.1", "NC_058037.1", "NC_058038.1",
+                       "NC_058039.1", "NC_058040.1", "NC_058041.1",
+                       "NC_081134.1", "NC_081135.1", "NC_081136.1",
+                       "NC_081139.1", "NC_081141.1", "NC_081143.1",
+                       "NC_081138.1", "NC_081140.1", "NC_081146.1",
+                       "NC_081145.1", "NC_081144.1", "NC_081147.1",
+                       "NC_081137.1", "NC_081142.1", "NC_081148.1",
+                       "NC_081151.1", "NC_081150.1", "NC_081149.1",
+                       "NC_081153.1", "NC_081152.1", "NC_081154.1")
+mixedrank <- function(x) order(gtools::mixedorder(x))
+
+## Rearrange line order to match wanted genome and chromosome orders
+sequences <- sequences %>%
+  arrange(factor(bin_id, levels=input_order), factor(seq_id, levels=input_chrom_order))
+
+## Change bin_id names
+sequences$bin_id[sequences$bin_id == "solSol_chrom.fa"] <- "Solea solea"
+sequences$bin_id[sequences$bin_id == "solSen_chrom.fa"] <- "Solea senegalensis"
+sequences$bin_id[sequences$bin_id == "micVar_chrom.fa"] <- "Microchirus variegatus"
+```
+
+# Read and prepare synteny links
+
+```{r prepare_links, echo=FALSE}
+links_ntsynt <- read.csv("ntsynt_flatfish_chrom.links.tsv", sep = "\t", header = TRUE)
+links_ntsynt$seq_id <- factor(links_ntsynt$seq_id,
+                              levels = mixedsort(unique(links_ntsynt$seq_id)))
+links_ntsynt <- links_ntsynt[mixedorder(links_ntsynt$seq_id), ]
+links_ntsynt$seq_id2 <- as.character(links_ntsynt$seq_id2)
+links_ntsynt$colour_block <- as.factor(links_ntsynt$colour_block)
+links_ntsynt$bin_id[links_ntsynt$bin_id == "solSol_chrom.fa"] <- "Solea solea"
+links_ntsynt$bin_id2[links_ntsynt$bin_id2 == "solSen_chrom.fa"] <- "Solea senegalensis"
+links_ntsynt$bin_id[links_ntsynt$bin_id == "solSen_chrom.fa"] <- "Solea senegalensis"
+links_ntsynt$bin_id2[links_ntsynt$bin_id2 == "micVar_chrom.fa"] <- "Microchirus variegatus"
+```
+
+## Adapt chromosome names
+
+```{r adapt_chr_names, echo=FALSE}
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058021.1", "chrom01", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058022.1", "chrom02", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058023.1", "chrom03", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058024.1", "chrom04", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058025.1", "chrom05", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058026.1", "chrom06", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058027.1", "chrom07", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058028.1", "chrom08", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058029.1", "chrom09", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058030.1", "chrom10", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058031.1", "chrom11", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058032.1", "chrom12", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058033.1", "chrom13", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058034.1", "chrom14", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058035.1", "chrom15", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058036.1", "chrom16", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058037.1", "chrom17", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058041.1", "chrom18", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058038.1", "chrom19", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058039.1", "chrom20", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id2 == "NC_058040.1", "chrom21", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058021.1", "chrom01", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058022.1", "chrom02", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058023.1", "chrom03", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058024.1", "chrom04", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058025.1", "chrom05", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058026.1", "chrom06", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058027.1", "chrom07", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058028.1", "chrom08", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058029.1", "chrom09", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058030.1", "chrom10", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058031.1", "chrom11", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058032.1", "chrom12", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058033.1", "chrom13", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058034.1", "chrom14", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058035.1", "chrom15", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058036.1", "chrom16", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058037.1", "chrom17", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058041.1", "chrom18", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058038.1", "chrom19", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058039.1", "chrom20", colour_block))
+links_ntsynt <- links_ntsynt %>% mutate(colour_block = ifelse(seq_id == "NC_058040.1", "chrom21", colour_block))
+```
+
+# Make the ribbon plot
+
+## Prepare scale bar
+
+```{r scale_bar, echo=FALSE}
+scale_bar <- tibble(x = c(0), xend = c(50000000),
+                    y = c(0), yend = c(0))
+
+# Infer best units for scale bar
+label <- paste(50000000, "bp", sep = " ")
+if (50000000 %% 1e9 == 0) {
+  label <- paste(50000000 / 1e9, "Gbp", sep = " ")
+} else if (50000000 %% 1e6 == 0) {
+  label <- paste(50000000 / 1e6, "Mbp", sep = " ")
+} else if (50000000 %% 1e3 == 0) {
+  label <- paste(50000000 / 1e3, "kbp", sep = " ")
+}
+```
+
+## Make plot
+
+```{r plot, echo=FALSE}
+p <-  gggenomes(seqs = sequences, links = links_ntsynt)
+plot <- p + theme_gggenomes_clean(base_size = 15) +
+  geom_link(aes(fill = links_ntsynt$colour_block, color = links_ntsynt$colour_block),
+            offset = 0,
+            alpha = 0.5,
+            size = 0.05) +
+  geom_seq_label(aes(label = c("5", "15", "22", "2", "20", "7", "18", "19",
+                               "23", "14", "3", "1", "8", "9", "6", "4",
+                               "11", "21", "12", "10", "13", "16", "17", "LG1",
+                               "LG2", "LG3", "LG4", "LG5", "LG6", "LG7", "LG8",
+                               "LG9", "LG10", "LG11", "LG12", "LG13", "LG14",
+                               "LG15", "LG16", "LG17", "LG19", "LG20", "LG21",
+                               "Sex", "1", "2", "3", "6", "8", "10", "5",
+                               "7", "13", "12", "11", "14", "4", "9", "15",
+                               "18", "17", "16", "20", "19", "21")),
+                 vjust = c(-4, -4, -4, -4, -4, -4, -4, -4, -4, -4,
+                           -4, -4, -4, -4, -4, -4, -4, -4, -4, -4,
+                           -4, -4, -4, -1, -1, -1, -1, -1, -1, -1,
+                           -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                           -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                           -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                           -1, -1, -1, -1, -1),
+                 hjust = c(-3, -0.75, -0.5, -4, -0.75, -3, -0.75, -0.75,
+                           -0.5, -0.75, -3, -4, -3, -2.5, -3, -3, -1, -0.5,
+                           -0.75, -1, -1, -0.5, -0.75, -0.75, -0.5, -0.5,
+                           -0.25, -0.25, -0.25, -0.4, -0.25, -0.25, -0.1, -0.1,
+                           -0.1, -0.05, -0.1, -0.05, 0, 0, 0, 0, 0, -0.2,
+                           -4.5, -3.5, -3, -2.5, -2.25, -1, -2.5, -2.25,
+                           -1, -1, -1, -1, -2, -2.5, -1, -0.75, -1, -1,
+                           -0.75, -0.75, -0.75),
+                 size = 4,
+                 fontface = "bold") + # adjust contig/chromosome lines
+  geom_bin_label(aes(label = bin_id),
+                 size = 5,
+                 hjust = 0.9,
+                 fontface = "bold.italic") + # adjust bin labels
+  geom_seq(size = 1.5,
+           colour = c("gray31", "gray31", "gray31", "gray31", "gray31",
+                      "gray31", "gray31", "gray31", "gray31", "gray31",
+                      "gray31", "gray31", "gray31", "gray31", "gray31",
+                      "gray31", "gray31", "gray31", "gray31", "gray31",
+                      "gray31", "gray31", "gray31", "gray31", "gray31",
+                      "gray31", "gray31", "gray31", "gray31", "gray31",
+                      "gray31", "gray31", "gray31", "gray31", "gray31",
+                      "gray31", "gray31", "gray31", "gray31", "gray31",
+                      "gray31", "gray31", "gray31", "red", "gray31", "gray31",
+                      "gray31", "gray31", "gray31", "gray31", "gray31",
+                      "gray31", "gray31", "gray31", "gray31", "gray31",
+                      "gray31", "gray31", "gray31", "gray31", "gray31",
+                      "gray31", "gray31", "gray31", "gray31")) +
+  theme(axis.text.x = element_text(size = 25),
+        legend.position = "none",
+        legend.text = element_text(size=8),
+        legend.key.size = unit(1,"line"),
+        legend.title = element_text(size=12),
+        panel.background = element_rect(fill='transparent'),
+        plot.background = element_rect(fill='transparent', color=NA),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.background = element_rect(fill='transparent'),
+        legend.box = NULL) + # adjust the general theme of the figure
+  scale_fill_manual(name = "Chromosomes",
+                    values = c("#7ebacc","#d84f31","#7645cf","#6cd55a","#d050c4",
+                               "#c7d849","#442979","#cb9b35","#8681d6","#5f883b",
+                               "#da4d7a","#66cea6","#913d73","#c3cd98","#412232",
+                               "#d9926c","#596386","#8a352d","#37513b","#d2a1bb",
+                               "#7f613f")) + # Adjust chromosome colors
+  scale_colour_manual(guide = "none",
+                      values = c("#7ebacc","#d84f31","#7645cf","#6cd55a","#d050c4",
+                                 "#c7d849","#442979","#cb9b35","#8681d6","#5f883b",
+                                 "#da4d7a","#66cea6","#913d73","#c3cd98","#412232",
+                                 "#d9926c","#596386","#8a352d","#37513b","#d2a1bb",
+                                 "#7f613f")) + # Adjust chromosome colors
+  guides(fill = guide_legend(title = "", ncol = 10),
+         colour = guide_legend(title = "")) +
+  easy_remove_x_axis(what = c("ticks", "title", "text", "line"), teach = FALSE)
+
+## reverse some chromosomes to make the plot nicer
+plot_final <- plot %>% flip_seqs(c(2, 4, 5, 6, 8, 9, 10, 12, 15, 16, 19), .bins = "Solea solea")
+plot <- plot_final %>% flip_seqs(c(2, 3, 5, 6, 11, 12, 14, 16, 17, 20, 22, 23), .bins = "Microchirus variegatus")
+plot 
+```

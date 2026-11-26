@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Load modules on the cluster
 module load Java/17.0.6
 
